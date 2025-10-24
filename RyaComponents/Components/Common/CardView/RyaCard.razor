@@ -1,0 +1,92 @@
+﻿@using System.ComponentModel
+
+<div class="@GetCardCssClass()">
+    @if (ShowHeader)
+    {
+        <div class="@GetCardHeaderCssClass()">
+            @if (ShowExpandButton)
+            {
+                <RyaButton Click="OnExpandButtonClick"
+                        CssClass="rya-expand-button d-flex align-items-center ms-2 justify-content-center position-absolute"
+                        IconCssClass="@(_cardCollapsed ? "fa-solid fa-chevron-right" : "fa-solid fa-chevron-down")">
+                </RyaButton>
+            }
+            @HeaderContent
+        </div>
+    }
+
+    @if (!_cardCollapsed)
+    {
+        <div class="rya-card-body">
+            @BodyContent
+        </div>
+        @if (ShowFooter)
+        {
+            <div class="rya-card-footer">
+                @FooterContent
+            </div>
+        }
+    }
+
+</div>
+
+@code {
+    #region Fields
+    private bool _cardCollapsed;
+    #endregion
+
+    #region Properties
+
+    [Parameter]
+    public RenderFragment? HeaderContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? BodyContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? FooterContent { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool ShowHeader { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ShowFooter { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ShowExpandButton { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    #endregion
+
+    #region Event Handlers
+    private void OnExpandButtonClick(MouseEventArgs e)
+    {
+        _cardCollapsed = !_cardCollapsed;
+    }
+    #endregion
+
+    #region Utility Methods
+
+    private string GetCardHeaderCssClass()
+    {
+        List<string> classes = ["rya-card-header", "position-relative"];
+        if (_cardCollapsed)
+        {
+            classes.Add("card-collapsed");
+        }
+        return CssClassHelper.CombineCssClasses(classes.ToArray());
+    }
+
+    private string GetCardCssClass()
+    {
+        return CssClassHelper.CombineCssClasses("rya-card" ,"d-flex", "flex-column", CssClass);
+    }
+
+    #endregion
+}

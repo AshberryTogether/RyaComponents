@@ -1,0 +1,102 @@
+﻿@using System.ComponentModel
+@inherits PopupBase
+
+<div @ref=Container class="@GetContainerCssClasses()" style="z-index: @(ZIndex.HasValue? ZIndex.Value: 1000)">
+    @if (IsVisible)
+    {
+        <div class="@GetCssClass()" style="@GetStyles()">
+            <div class="rya-dropdown-content w-100">
+                @if (ShowHeader)
+                {
+                    <div class="rya-dropdown-header d-flex align-items-center w-100">
+                        @HeaderContent
+                    </div>
+                }
+                <div class="rya-dropdown-body w-100">
+                    @BodyContent
+                </div>
+                @if (ShowFooter)
+                {
+                    <div class="rya-dropdown-footer">
+                        @FooterContent
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    #region Properties
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? PositionTarget { get; set; }
+
+    protected override string ClientModulePath => "./_content/RyaComponents/Components/Common/Dialogs/DropDown/RyaDropDown.razor.js";
+
+    #endregion
+
+    #region Lifecycle Methods
+    protected override async Task<IJSObjectReference?> InitializeClientInstance()
+    {
+        if (ClientModule is null) return null;
+        return await ClientModule.InvokeAsync<IJSObjectReference>("createDropDown", Container, ClientRef, CloseOnOutsideClick, PositionTarget);
+    }
+
+    #endregion
+
+    #region Utility Methods
+
+    [JSInvokable]
+    public async Task CloseDropDownAsync()
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(IsVisible);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetCssClass()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "visible", "rya-dropdown", "position-absolute", CssClass);
+    }
+
+    private string GetContainerCssClasses()
+    {
+        var classes = new List<string>() {"d-none", "position-absolute", "w-100", "h-100" };
+        return CssClassHelper.CombineCssClasses(classes.ToArray());
+    }
+
+    private string GetStyles()
+    {
+        List<string> styles = [];
+        if (!string.IsNullOrEmpty(Width))
+        {
+            styles.Add($"width: {Width};");
+        }
+        if (!string.IsNullOrEmpty(MinWidth))
+        {
+            styles.Add($"min-width: {MinWidth};");
+        }
+        if (!string.IsNullOrEmpty(MaxWidth))
+        {
+            styles.Add($"max-width: {MaxWidth};");
+        }
+        if (!string.IsNullOrEmpty(Height))
+        {
+            styles.Add($"height: {Height};");
+        }
+        if (!string.IsNullOrEmpty(MinHeight))
+        {
+            styles.Add($"min-height: {MinHeight};");
+        }
+        if (!string.IsNullOrEmpty(MaxHeight))
+        {
+            styles.Add($"max-height: {MaxHeight};");
+        }
+
+        return CssClassHelper.CombineCssClasses(styles.ToArray());
+    }
+
+    #endregion
+}

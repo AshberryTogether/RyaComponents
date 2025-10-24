@@ -1,0 +1,202 @@
+﻿@using System.ComponentModel
+@using Microsoft.AspNetCore.Components.Routing
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@code {
+    #region Fields
+    private DotNetObjectReference<PopupBase>? _clientRef;
+    private ElementReference _container;
+    private IJSObjectReference? _clientModule;
+    private IJSObjectReference? _clientInstance;
+    protected bool _disposed;
+    private bool _isVisible;
+
+    #endregion
+
+    #region Properties
+    protected virtual string ClientModulePath
+    {
+        get => "./_content/RyaComponents/Components/Common/Dialogs/RyaPopupBase.razor.js";
+    }
+
+    protected DotNetObjectReference<PopupBase>? ClientRef
+    {
+        get => _clientRef;
+        set => _clientRef = value;
+    }
+
+    protected ElementReference Container
+    {
+        get => _container;
+        set => _container = value;
+    }
+
+    protected IJSObjectReference? ClientInstance
+    {
+        get => _clientInstance;
+        set => _clientInstance = value;
+    }
+
+    protected IJSObjectReference? ClientModule
+    {
+        get => _clientModule;
+        set => _clientModule = value;
+    }
+
+    [CascadingParameter] 
+    private EditContext? EditContext { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public int? ZIndex { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? Width { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? MaxWidth { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? MinWidth { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? Height { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? MaxHeight { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? MinHeight { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool CloseOnOutsideClick { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool IsVisible
+    {
+        get => _isVisible;
+        set
+        {
+            if (_isVisible != value)
+            {
+                _isVisible = value;
+                IsVisibleChanged.InvokeAsync(value);
+
+                if (_isVisible)
+                {
+                    Task.Run(async () =>
+                    {
+                        await InitializeClientResources();
+                        await InvokeAsync(StateHasChanged);
+                        await _clientInstance!.InvokeVoidAsync("setContent", _container);
+                    });
+                }
+            }
+        }
+    }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [Parameter]
+    public RenderFragment? HeaderContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? BodyContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? FooterContent { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool ShowHeader { get; set; } = true;
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ShowFooter { get; set; }
+
+    #endregion
+
+    #region Lifecycle Methods
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        try
+        {
+            await Task.Delay(1000);
+            await DisposeClientInstance();
+            await DisposeClientModule();
+        }
+        catch (JSDisconnectedException) { }
+        catch (TaskCanceledException) { }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await InitializeClientResources();
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+    #endregion
+
+    #region Utility Methods
+
+    private async Task InitializeClientResources()
+    {
+        _clientModule ??= await GetClientModule();
+        _clientRef ??= DotNetObjectReference.Create(this);
+        _clientInstance ??= await InitializeClientInstance();
+    }
+
+    protected async Task<IJSObjectReference> GetClientModule()
+    {
+        return await JS.InvokeAsync<IJSObjectReference>("import", ClientModulePath);
+    }
+
+    protected virtual async Task<IJSObjectReference?> InitializeClientInstance()
+    {
+        if (ClientModule is null) return null;
+        return await ClientModule.InvokeAsync<IJSObjectReference>("createPopup");
+    }
+    
+    protected void DisposeClientReference()
+    {
+        ClientRef?.Dispose();
+    }
+
+    protected virtual async Task DisposeClientInstance()
+    {
+        if (ClientInstance != null)
+        {
+            await ClientInstance.DisposeAsync();
+        }
+    }
+
+    protected virtual async Task DisposeClientModule()
+    {
+        if (ClientModule != null)
+        {
+            await ClientModule.DisposeAsync();
+        }
+    }
+
+    #endregion
+}

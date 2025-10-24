@@ -1,0 +1,97 @@
+﻿@using System.ComponentModel
+<div class="@GetCssClass()">
+    <DoublePrevButton ActivePageIndex=ActivePageIndex NavigationButtonsVisible=NavigationButtonsVisible ActivePageIndexChanged="OnPagerButtonClick"></DoublePrevButton>
+    <PrevButton ActivePageIndex=ActivePageIndex NavigationButtonsVisible=NavigationButtonsVisible ActivePageIndexChanged="OnPagerButtonClick"></PrevButton>
+
+    @for (int i = 0; i < GetVisibleButtonCount(); i++)
+    {
+        var pageNumber = i + 1 + GetVisibleStartIndex();
+        <RyaButton Click="() => OnPagerButtonClick(pageNumber)"
+                    CssClass="@GetNumericButtonCssClasses(pageNumber)"
+                    Text="@(pageNumber.ToString())">
+        </RyaButton>
+    }
+
+    <NextButton ActivePageIndex=ActivePageIndex NavigationButtonsVisible=NavigationButtonsVisible PageCount=PageCount ActivePageIndexChanged="OnPagerButtonClick"></NextButton>
+    <DoubleNextButton ActivePageIndex=ActivePageIndex NavigationButtonsVisible=NavigationButtonsVisible PageCount=PageCount ActivePageIndexChanged="OnPagerButtonClick"></DoubleNextButton>
+</div>
+
+
+@code {
+    #region Fields
+    private const int VISIBLE_NUMERIC_BUTTON_COUNT_DEFAULT = 5;
+    #endregion
+
+    #region Properties
+    [DefaultValue(0)]
+    [Parameter]
+    public int ActivePageIndex { get; set; }
+
+    [Parameter]
+    public EventCallback<int> ActivePageIndexChanged { get; set; }
+
+    [DefaultValue(0)]
+    [Parameter]
+    public int PageCount { get; set; }
+
+    [DefaultValue(VISIBLE_NUMERIC_BUTTON_COUNT_DEFAULT)]
+    [Parameter]
+    public int VisibleNumericButtonCount { get; set; } = VISIBLE_NUMERIC_BUTTON_COUNT_DEFAULT;
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    private bool NavigationButtonsVisible => PageCount > VisibleNumericButtonCount;
+
+    #endregion
+
+    #region Event Handlers
+    private async Task OnPagerButtonClick(int pageNumber)
+    {
+        if (pageNumber < 1 || pageNumber > PageCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageNumber), $"Page number must be between 1 and {PageCount}.");
+        }
+        ActivePageIndex = pageNumber - 1;
+        await ActivePageIndexChanged.InvokeAsync(ActivePageIndex);
+    }
+    #endregion
+    
+    #region Utility Methods
+    private int GetVisibleStartIndex()
+    {
+        var radius = GetVisibleButtonCount() / 2;
+        if (ActivePageIndex - radius < 0) return 0;
+        if (ActivePageIndex + radius + 1 > PageCount) return PageCount - GetVisibleButtonCount();
+        return ActivePageIndex - radius;
+    }
+
+    private int GetVisibleButtonCount()
+    {
+        return Math.Min(VisibleNumericButtonCount, PageCount);
+    }
+
+    private string GetNumericButtonCssClasses(int pageNumber)
+    {
+        if (pageNumber < 1 || pageNumber > PageCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageNumber), $"Page number must be between 1 and {PageCount}.");
+        }
+
+        List<string> buttonClasses = ["rya-pager-button d-flex justify-content-center align-items-center"];
+        
+        if (ActivePageIndex + 1 == pageNumber)
+        {
+            buttonClasses.Add("rya-pager-button-active");
+        }
+
+        return CssClassHelper.CombineCssClasses(buttonClasses.ToArray());
+    }
+
+    private string GetCssClass()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "rya-pager", CssClass);
+    }
+    #endregion
+}

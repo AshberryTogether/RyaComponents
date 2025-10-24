@@ -1,0 +1,91 @@
+﻿@using System.Globalization
+<div class="d-flex w-100 rya-calendar-body justify-content-center align-items-center">
+    <table>
+        <colgroup>
+            @for (int i = 0; i < CalendarHelper.WEEK_DAYS_COUNT; i++)
+            {
+                <col style="width: 50px;" />
+            }
+        </colgroup>
+        <tbody>
+            <tr class="week-day-names">
+                @foreach (var weekDayName in CalendarHelper.GetWeekDayNames())
+                {
+                    <th>@weekDayName</th>
+                }
+            </tr>
+            @for (int i = 0; i < CalendarHelper.VISIBLE_WEEKS_COUNT; i++)
+            {
+                <tr class="date-row">
+                    @for (int j = 0; j < CalendarHelper.WEEK_DAYS_COUNT; j++)
+                    {
+                        var date = VisibleDate.GetDateInCalendar(CalendarHelper.WEEK_DAYS_COUNT* i +j);
+                        <td class="@GetCellCssClass(CalendarHelper.WEEK_DAYS_COUNT * i + j)">
+                            @if (date.HasValue)
+                            {
+                                <a @onclick="() => OnDateCellClick(date)">@date.Day</a>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    #region Properties
+    [Parameter]
+    public DateType VisibleDate { get; set; }
+
+    [Parameter]
+    public DateType SelectedDate { get; set; }
+
+    [Parameter]
+    public EventCallback<DateType> SelectedDateChanged { get; set; }
+    #endregion
+
+    #region Event Handlers
+    private async Task OnDateCellClick(DateType value)
+    {
+        SelectedDate = value;
+        await SelectedDateChanged.InvokeAsync(SelectedDate);
+    }
+    #endregion
+
+    #region Utility Methods
+    private bool IsDateInCurrentMonth(DateType date)
+    {
+        return date.Month == VisibleDate.Month && date.Year == VisibleDate.Year;
+    }
+
+    private string GetCellCssClass(int diff)
+    {
+        DateType date = VisibleDate.GetDateInCalendar(diff);
+
+        HashSet<string> result = ["date-cell"];
+
+        if (date.HasValue)
+        {
+            if (!IsDateInCurrentMonth(date))
+            {
+                result.Add("date-cell-disabled");
+            }
+            if (date.IsDateToday())
+            {
+                result.Add("date-cell-today");
+            }
+            if (date.Equals(SelectedDate))
+            {
+                result.Add("date-cell-selected");
+            }
+        }
+        else
+        {
+            result.Add("date-cell-empty");
+        }
+
+        return string.Join(' ', result);
+    }
+    #endregion
+}

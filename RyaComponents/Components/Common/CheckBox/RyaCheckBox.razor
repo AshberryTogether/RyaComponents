@@ -1,0 +1,97 @@
+﻿@using System.ComponentModel
+@if(Visible){
+    <div class="d-flex align-items-center rya-chk-element">
+        @if (ContentPosition == CheckBoxContentPosition.Left)
+        {
+            <label>@ChildContent</label>
+        }
+
+        @if (!DisableDefaultRender)
+        {
+            <div @onclick=OnValueChanged class="@GetCssClass()">
+                @if (Value)
+                {
+                    <RyaCheckBoxCheckedImage></RyaCheckBoxCheckedImage>
+                }
+                else
+                {
+                    <RyaCheckBoxUncheckedImage></RyaCheckBoxUncheckedImage>
+                }
+            </div>
+        }
+
+        <input type="checkbox" @attributes=Attributes value="@Value" readonly="@ReadOnly" disabled="@(!Enabled)" />
+        @if (ContentPosition == CheckBoxContentPosition.Right)
+        {
+            <label>@ChildContent</label>
+        }
+    </div>
+}
+
+
+@code {
+    #region Fields
+    private const CheckBoxContentPosition DEFAULT_CONTENT_POSITION = CheckBoxContentPosition.Left;
+    #endregion
+
+    #region Properties
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool Value{ get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ValueChanged { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent{ get; set; }
+
+    [DefaultValue(DEFAULT_CONTENT_POSITION)]
+    [Parameter]
+    public CheckBoxContentPosition ContentPosition { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool DisableDefaultRender { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    #endregion
+
+    #region Event Handlers
+
+    private async Task OnValueChanged()
+    {
+        if (!Enabled || ReadOnly) return;
+        Value = !Value;
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    #endregion
+
+    #region Utility Methods
+    private string GetCssClass(){
+        if (Enabled){
+            return CssClassHelper.CombineCssClasses("d-flex", "align-items-center", "rya-chk-box", CssClass);
+        }
+        return CssClassHelper.CombineCssClasses("d-flex", "align-items-center", "rya-chk-box", "rya-chk-box-disabled", CssClass);
+    }
+    #endregion
+}

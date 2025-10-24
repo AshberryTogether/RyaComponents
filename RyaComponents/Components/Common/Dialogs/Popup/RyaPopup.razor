@@ -1,0 +1,130 @@
+﻿@using System.ComponentModel
+@using Microsoft.AspNetCore.Components.Routing
+@inherits PopupBase
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+@inject NavigationManager Nav
+
+<div @ref=Container>
+    @if (IsVisible)
+    {
+        <div class="@GetPortalCssClasses()" style="z-index: @(ZIndex.HasValue ? ZIndex.Value : 1000);">
+            <div class="@GetCssClass()" style="@GetStyles()">
+                <div class="rya-popup-content d-flex flex-column w-100">
+                    @if (ShowHeader)
+                    {
+                        <div class="rya-popup-header d-flex align-items-center w-100">
+                            @HeaderContent
+                            @if (ShowCloseButton)
+                            {
+                                <RyaButton Click="ClosePopupAsync"
+                                           style="padding-right:0.2rem; height:16px;"
+                                           CssClass="rya-close-btn d-flex position-absolute end-0"
+                                           IconCssClass="fa-regular fa-circle-xmark"></RyaButton>
+                            }
+                        </div>
+                    }
+                    <div class="rya-popup-body w-100 flex-grow-1">
+                        @BodyContent
+                    </div>
+                    @if (ShowFooter)
+                    {
+                        <div class="rya-popup-footer">
+                            @FooterContent
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    #region Properties
+    protected override string ClientModulePath
+    {
+        get => "./_content/RyaComponents/Components/Common/Dialogs/Popup/RyaPopup.razor.js";
+    }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ApplyBackgroundShading { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool AllowDragging { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ShowCloseButton { get; set; }
+    #endregion
+
+    #region Lifecycle Methods
+
+    protected override async Task<IJSObjectReference?> InitializeClientInstance()
+    {
+        if (ClientModule is null) return null;
+        return await ClientModule.InvokeAsync<IJSObjectReference>("createPopup", Container, ClientRef, CloseOnOutsideClick, AllowDragging);
+    }
+
+    #endregion
+
+    #region Utility Methods
+
+    [JSInvokable]
+    public async Task ClosePopupAsync()
+    {
+        IsVisible = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetCssClass()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "visible", "rya-popup", "position-absolute", CssClass);
+    }
+
+    private string GetPortalCssClasses()
+    {
+        var classes = new List<string>() { "rya-portal", "d-none", "position-absolute", "w-100", "h-100", "top-0", "start-0" };
+        if (ApplyBackgroundShading && IsVisible)
+        {
+            classes.Add("shading");
+        }
+        return CssClassHelper.CombineCssClasses(classes.ToArray());
+    }
+
+    private string GetStyles()
+    {
+        List<string> styles = [];
+        if (!string.IsNullOrEmpty(Width))
+        {
+            styles.Add($"width: {Width};");
+        }
+        if (!string.IsNullOrEmpty(MinWidth))
+        {
+            styles.Add($"min-width: {MinWidth};");
+        }
+        if (!string.IsNullOrEmpty(MaxWidth))
+        {
+            styles.Add($"max-width: {MaxWidth};");
+        }
+        if (!string.IsNullOrEmpty(Height))
+        {
+            styles.Add($"height: {Height};");
+        }
+        if (!string.IsNullOrEmpty(MinHeight))
+        {
+            styles.Add($"min-height: {MinHeight};");
+        }
+        if (!string.IsNullOrEmpty(MaxHeight))
+        {
+            styles.Add($"max-height: {MaxHeight};");
+        }
+        styles.Add($"z-index: {(ZIndex.HasValue ? ZIndex.Value : 1000)};");
+        styles.Add($"top: calc(50vh - {Height} / 2);");
+        styles.Add($"left: calc(50vw - {Width} / 2);");
+
+        return CssClassHelper.CombineCssClasses(styles.ToArray());
+    }
+    #endregion
+}

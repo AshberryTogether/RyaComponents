@@ -1,0 +1,48 @@
+﻿@using System.ComponentModel
+<div class="d-flex rya-drawer @CssClass">
+    @if (IsOpen)
+    {
+        <div class="rya-panel d-flex flex-column" style="width: @PanelWidth">
+            @if (HeaderContent is not null)
+            {
+                <div class="rya-panel-header">
+                    @HeaderContent
+                </div>
+            }
+            @BodyContent
+        </div>
+    }
+
+    <div class="rya-target w-100">
+        @TargetContent
+    </div>
+</div>
+
+@code {
+    #region Properties
+    [Parameter]
+    public RenderFragment? HeaderContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? BodyContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? TargetContent { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? PanelWidth { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    #endregion
+}

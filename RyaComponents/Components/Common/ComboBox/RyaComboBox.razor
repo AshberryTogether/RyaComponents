@@ -1,0 +1,146 @@
+﻿@using System.ComponentModel
+@implements IAsyncDisposable
+@typeparam T
+@inject IJSRuntime JS
+
+@if (Visible)
+{
+    <div class="@GetCssClasses()" id="@_comboboxElementId">
+        <input @ref=inputElement type="text"
+               value="@Value"
+               class="w-100"
+               placeholder="@NullText"
+               @onfocusout=OnFocusOut
+               readonly="readonly"
+               disabled="@(!Enabled)" />
+        @if (ClearButtonVisible && !Readonly && Enabled)
+        {
+            <RyaButton Click=OnClearButtonClick
+                       CssClass="d-flex align-items-center rya-clear-btn"
+                       IconCssClass="fa-regular fa-circle-xmark">
+            </RyaButton>
+        }
+
+        <RyaButton Click=OnDropDownButtonClick
+                   CssClass="d-flex align-items-center rya-drop-down-btn"
+                   Enabled=@(Enabled && !Readonly)
+                   IconCssClass="fa-solid fa-chevron-down">
+        </RyaButton>
+
+        <RyaComboBoxDropDown T="@T" 
+            Enabled=@Enabled
+            @bind-Visible=_dropDownVisible
+            PositionTarget="@($"#{_comboboxElementId}")"
+            Data=@Data 
+            Value="@Value" 
+            ValueChanged="@OnValueChanged"
+            ItemTemplate="@ItemTemplate"></RyaComboBoxDropDown>
+    </div>
+}
+
+@code {
+    #region Fields
+
+    private string _comboboxElementId = $"rcb_{Guid.NewGuid()}";
+
+    private ElementReference inputElement;
+
+    private IJSObjectReference? _module;
+
+    private bool _dropDownVisible;
+
+    #endregion
+
+    #region Properties
+
+    [Parameter]
+    public RenderFragment<T>? ItemTemplate { get; set; }
+
+    [Parameter]
+    public IEnumerable<T>? Data { get; set; } = Enumerable.Empty<T>();
+
+    [DefaultValue(null)]
+    [Parameter]
+    public T? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<T> ValueChanged { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? NullText { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ClearButtonVisible { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool Readonly { get; set; }
+
+    #endregion
+
+    #region Event Handlers
+
+    private async Task OnClearButtonClick(MouseEventArgs e)
+    {
+        await ChangeValue(default(T));
+    }
+
+    private void OnDropDownButtonClick(MouseEventArgs e)
+    {
+        if (!Enabled || !Visible) return;
+        _dropDownVisible = true;
+    }
+
+    private async Task OnValueChanged(T item)
+    {
+        Value = item;
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private void OnFocusOut(FocusEventArgs e)
+    {
+        _dropDownVisible = false;
+    }
+
+    #endregion
+
+    #region Lifecycle Methods
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            await _module.DisposeAsync();
+        }
+    }
+    #endregion
+    
+    #region Utility Methods
+    private string GetCssClasses()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "rya-editor", "position-relative", CssClass);
+    }
+
+    private async Task ChangeValue(T? value)
+    {
+        if (!Readonly && Enabled)
+        {
+            Value = value;
+            await ValueChanged.InvokeAsync(Value);
+        }
+    }
+    #endregion
+}

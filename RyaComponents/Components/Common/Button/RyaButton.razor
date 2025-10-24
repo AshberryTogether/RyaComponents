@@ -1,0 +1,67 @@
+﻿@using System.ComponentModel
+@if(Visible) {
+    <button class="@GetCssClass()"
+            type="@GetButtonType()"
+            @onclick=Click
+            @attributes="Attributes"
+            disabled="@(!Enabled)">
+        @if(ChildContent is null) {
+            <span class="@CssClassHelper.CombineCssClasses("rya-btn-icon", IconCssClass)"></span>
+            <span class="rya-btn-txt">@Text</span>
+        }
+        else {
+            @ChildContent
+        }
+    </button>
+}
+
+
+@code {
+    #region Properties
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? Attributes { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> Click { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? Text { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? IconCssClass { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool SubmitFormOnClick { get; set; }
+    #endregion
+
+    #region Utility Methods
+    private string GetCssClass() {
+        if(Enabled) {
+            return CssClassHelper.CombineCssClasses("rya-btn", CssClass);
+        }
+        return CssClassHelper.CombineCssClasses("rya-btn", "rya-btn-disabled", CssClass);
+    }
+
+    private string GetButtonType() {
+        return SubmitFormOnClick ? "submit" : "button";
+    }
+    #endregion
+}

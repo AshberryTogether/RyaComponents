@@ -1,0 +1,37 @@
+﻿@using RyaComponents.Components.Common.Calendar
+@using System.ComponentModel
+@typeparam T
+
+<RyaDropDown ShowHeader=false CloseOnOutsideClick=true IsVisible=Visible IsVisibleChanged=VisibleChanged PositionTarget="@DateBoxElement">
+    <BodyContent>
+        <RyaComponents.Components.Common.Calendar.RyaCalendar T=T 
+            Enabled=@Enabled SelectedDate=SelectedDate
+            SelectedDateChanged="SelectedDateChanged">
+        </RyaComponents.Components.Common.Calendar.RyaCalendar>
+    </BodyContent>
+</RyaDropDown>
+
+@code{
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+
+    [Parameter]
+    public string? DateBoxElement { get; set; }
+
+    [Parameter]
+    public T? SelectedDate { get; set; }
+
+    [Parameter]
+    public EventCallback<T> SelectedDateChanged { get; set; }
+
+    [Parameter]
+    public bool Enabled { get; set; }
+
+    private string? GetCssClasses()
+    {
+        return CssClassHelper.CombineCssClasses("dropdown-menu", "rya-drop-down");
+    }
+}

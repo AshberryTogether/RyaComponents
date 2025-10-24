@@ -1,0 +1,187 @@
+﻿@inject IJSRuntime JS
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+@if (Visible)
+{
+    <CascadingValue TValue="RyaMenu" Value="this">
+        <div @ref=_menuContainer id="@_menuContainerId" class="@GetCssClasses()">
+            <div id="@_hamburgerContainerId" class="hamburger-btn-container" 
+                @ref=_hamburgerContainer>
+                <RyaComponents.RyaMenuItem ItemClick="OnHamburgerItemClick" Visible=_collapsed
+                                            CssClass="rya-hamburger-btn"
+                                            IconCssClass="fa-solid fa-bars"></RyaComponents.RyaMenuItem>
+            </div>
+            <div class="rya-menu-items-container w-100 @(_collapsed ? "d-none" : "d-flex")">
+                @Items
+            </div>
+            <RyaDropDown @bind-IsVisible=_isDropDownVisible
+                         Width="100%"
+                         ShowHeader=false
+                         PositionTarget="@($"#{_hamburgerContainerId}")"
+                         CloseOnOutsideClick=true>
+                <BodyContent>
+                    <ul class="list-group">
+                        @foreach (IRyaMenuItem item in _items!.Where(it => it.Template is null && !string.IsNullOrEmpty(it.Text)))
+                        {
+                            <li class="list-group-item p-0">
+                                <RyaButton Click="() => OnDropDownMenuItemClick(item)"
+                                            CssClass="@($"rya-menu-item-btn w-100 {item.CssClass}")"
+                                            ChildContent="@item.TextTemplate"
+                                            IconCssClass="@item.IconCssClass"
+                                            Enabled=@item.Enabled
+                                            Visible=@item.Visible
+                                            Text="@item.Text">
+                                </RyaButton>
+                            </li>
+                        }
+                    </ul>
+                </BodyContent>
+            </RyaDropDown>
+        </div>
+    </CascadingValue>
+}
+
+@code {
+    #region Fields
+
+    private DotNetObjectReference<RyaMenu>? _menuRef;
+    private ElementReference _menuContainer;
+    private ElementReference _hamburgerContainer;
+    private string _hamburgerContainerId;
+    private string _menuContainerId;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _clientMenu;
+    private bool _isDropDownVisible;
+    private bool _disposed;
+    private bool _collapsed;
+    private IList<IRyaMenuItem> _items = [];
+    private double _menuItemsMinWidth;
+    private const string _clientModulePath = "./_content/RyaComponents/Components/Common/Menu/RyaMenu.razor.js";
+
+    #endregion
+
+    #region Properties
+
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [Parameter]
+    public RenderFragment? Items { get; set; }
+
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    #endregion
+
+    #region Event Handlers
+
+    private async Task OnDropDownMenuItemClick(IRyaMenuItem item)
+    {
+        _isDropDownVisible = false;
+        await item.ItemClick.InvokeAsync();
+        if (!string.IsNullOrEmpty(item.NavigateUrl))
+        {
+            Nav.NavigateTo(item.NavigateUrl, true);
+        }
+    }
+
+    private void OnHamburgerItemClick()
+    {
+        _isDropDownVisible = true;
+    }
+
+    [JSInvokable]
+    public async Task OnWidthChanged(double width)
+    {
+        _collapsed = width < _menuItemsMinWidth;
+        if (!_collapsed)
+        {
+            _isDropDownVisible = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    #endregion
+
+    #region Lifecycle Methods
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        _menuRef?.Dispose();
+
+        if (_module != null)
+        {
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+        if (_clientMenu != null)
+        {
+            try
+            {
+                await _clientMenu.InvokeVoidAsync("dispose");
+                await _clientMenu.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _items = new List<IRyaMenuItem>();
+        _hamburgerContainerId = $"hmb_{Guid.NewGuid()}";
+        _menuContainerId = $"ryamenu_{Guid.NewGuid()}";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", _clientModulePath);
+
+            if (_menuContainer.Context != null)
+            {
+                _menuRef = DotNetObjectReference.Create(this);
+                _clientMenu = await _module.InvokeAsync<IJSObjectReference>("createMenu", _menuContainer, _menuRef);
+                _menuItemsMinWidth = await _clientMenu.InvokeAsync<double>("getCollapsedWidth");
+                double currentWidth = await _clientMenu.InvokeAsync<double>("getContainerWidth");
+                _collapsed = currentWidth < _menuItemsMinWidth;
+            }
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    #endregion
+
+    #region Utility Methods
+
+    public void AddItem(IRyaMenuItem item)
+    {
+        if (_items.Contains(item)) return;
+        _items.Add(item);
+    }
+
+    private string GetCssClasses()
+    {
+        return CssClassHelper.CombineCssClasses("rya-menu", "d-flex", "overflow-hidden", "dropdown", CssClass);
+    }
+
+    #endregion
+}

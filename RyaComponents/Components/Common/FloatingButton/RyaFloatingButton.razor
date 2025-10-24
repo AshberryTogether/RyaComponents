@@ -1,0 +1,156 @@
+﻿@using System.ComponentModel
+@inject IJSRuntime JS
+
+@if (Visible)
+{
+    <div @ref=_buttonContainer class="@GetContainerCssClasses()" style='@GetContainerStyles()'>
+        <RyaButton Text="@Text"
+                   Click="@Click"
+                   Enabled=@Enabled
+                   CssClass="@CssClass"
+                   IconCssClass="@IconCssClass"
+                   Visible=@Visible
+                   SubmitFormOnClick=false
+                   ChildContent="@ChildContent"></RyaButton>
+    </div>   
+}
+
+@code {
+    #region Fields
+    private ElementReference _buttonContainer;
+    private bool _disposed;
+    private IJSObjectReference? _clientModule;
+    private DotNetObjectReference<RyaFloatingButton>? _clientRef { get; set; }
+    private const string _clientModulePath = "./_content/RyaComponents/Components/Common/FloatingButton/RyaFloatingButton.razor.js";
+    #endregion
+
+    #region Properties
+    [DefaultValue("body")]
+    [Parameter]
+    public string? ContainerSelector { get; set; } = "body";
+
+    [DefaultValue(20)]
+    [Parameter]
+    public double VerticalMargin { get; set; } = 20;
+
+    [DefaultValue(20)]
+    [Parameter]
+    public double HorizontalMargin { get; set; } = 20;
+
+    [Parameter]
+    public ScreenPosition ScreenPosition { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? IconCssClass { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> Click { get; set; }
+
+    [Parameter]
+    public string? Text { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    [DefaultValue(null)]
+    [Parameter]
+    public int? ZIndex { get; set; }
+
+    #endregion
+
+    #region Lifecycle Methods
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _clientModule = await GetClientModule();
+            _clientRef = DotNetObjectReference.Create(this);
+            await _clientModule.InvokeVoidAsync("createFloatingButton", _buttonContainer, ContainerSelector);
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        _clientRef?.Dispose();
+
+        if (_clientModule != null)
+        {
+            try
+            {
+                await _clientModule.InvokeVoidAsync("removeFloatingButton", _buttonContainer);
+                await _clientModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+    }
+    #endregion
+
+    #region Utility Methods
+    private async Task<IJSObjectReference> GetClientModule()
+    {
+        return await JS.InvokeAsync<IJSObjectReference>("import", _clientModulePath);
+    }
+
+    private string GetContainerStyles()
+    {
+        return $"margin: {VerticalMargin}px {HorizontalMargin}px";
+    }
+
+    private string GetContainerCssClasses()
+    {
+        List<string> classes = ["d-flex", "visible", "position-absolute"];
+        switch (ScreenPosition)
+        {
+            case ScreenPosition.TopLeft:
+                {
+                    classes.Add("top-0");
+                    classes.Add("start-0");
+                    break;
+                }
+            case ScreenPosition.TopRight:
+                {
+                    classes.Add("top-0");
+                    classes.Add("end-0");
+                    break;
+                }
+            case ScreenPosition.BottomLeft:
+                {
+                    classes.Add("bottom-0");
+                    classes.Add("start-0");
+                    break;
+                }
+            case ScreenPosition.BottomRight:
+                {
+                    classes.Add("bottom-0");
+                    classes.Add("end-0");
+                    break;
+                }
+        }
+        return CssClassHelper.CombineCssClasses(classes.ToArray());
+    }
+    #endregion
+}

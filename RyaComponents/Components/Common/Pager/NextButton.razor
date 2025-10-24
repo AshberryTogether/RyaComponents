@@ -1,0 +1,22 @@
+﻿<RyaButton Click="async () => await ActivePageIndexChanged.InvokeAsync(Math.Min(PageCount - 1, ActivePageIndex + 1) + 1)"
+           CssClass="rya-pager-button"
+           Enabled="ActivePageIndex != PageCount - 1"
+           Visible="NavigationButtonsVisible">
+    <svg style="vertical-align: baseline" width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 4L32 24L18 44" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+</RyaButton>
+
+@code {
+    [Parameter]
+    public EventCallback<int> ActivePageIndexChanged { get; set; }
+
+    [Parameter]
+    public int ActivePageIndex { get; set; }
+
+    [Parameter]
+    public int PageCount { get; set; }
+
+    [Parameter]
+    public bool NavigationButtonsVisible { get; set; }
+}

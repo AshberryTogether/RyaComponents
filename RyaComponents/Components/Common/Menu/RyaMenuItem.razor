@@ -1,0 +1,112 @@
+﻿@using System.ComponentModel
+@inject NavigationManager Nav
+@implements IRyaMenuItem
+
+@if(Visible){
+    <div class="@GetCssClasses()" @attributes=Attributes>
+        @if(Template is null)
+        {
+            <RyaButton 
+                Click="OnMenuItemClick"
+                CssClass="rya-menu-item-btn w-100"
+                ChildContent="@TextTemplate"
+                IconCssClass="@IconCssClass" 
+                Enabled=@Enabled 
+                Text="@Text">
+            </RyaButton>
+        }
+        else
+        {
+            @Template
+        }
+    </div>
+}
+
+@code {
+    #region Properties
+    [CascadingParameter]
+    public RyaMenu? Menu { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? Attributes { get; set; }
+
+    [Parameter]
+    public EventCallback ItemClick { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? NavigateUrl { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? Text { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool Stretched { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? Name { get; set; }
+
+    [Parameter]
+    public RenderFragment? TextTemplate { get; set; }
+
+    [Parameter]
+    public RenderFragment? Template { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? IconCssClass { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    #endregion
+
+    #region Lifecycle Methods
+
+    protected override async Task OnInitializedAsync()
+    {
+        Menu!.AddItem(this);
+        await base.OnInitializedAsync();
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+    private async Task OnMenuItemClick(MouseEventArgs e)
+    {
+        await ItemClick.InvokeAsync();
+        if (!String.IsNullOrEmpty(NavigateUrl))
+        {
+            Nav.NavigateTo(NavigateUrl);
+        }
+    }
+
+    #endregion
+
+    #region Utility Methods
+
+    private string GetCssClasses()
+    {
+        var classes = new List<string?>() { "rya-menu-item", "d-flex", "align-items-center", CssClass };
+        if (Stretched)
+        {
+            classes.Add("flex-grow-1");
+        }
+        return CssClassHelper.CombineCssClasses(classes.ToArray());
+    }
+
+    #endregion
+}

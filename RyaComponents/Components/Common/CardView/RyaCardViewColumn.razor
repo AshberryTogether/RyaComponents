@@ -1,0 +1,22 @@
+﻿@implements IRyaCardViewColumn
+
+@code {
+    #region Properties
+    [CascadingParameter]
+    public RyaCardView? CardView { get; set; }
+
+    [Parameter]
+    public string? FieldName { get; set; }
+    #endregion
+
+    #region Lifecycle Methods
+    protected override async Task OnInitializedAsync()
+    {
+        if(CardView is not null)
+        {
+            CardView.AddColumn(this);
+        }
+        await base.OnInitializedAsync();
+    }
+    #endregion
+}

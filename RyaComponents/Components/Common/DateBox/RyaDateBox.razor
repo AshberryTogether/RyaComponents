@@ -1,0 +1,184 @@
+﻿@using System.ComponentModel
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@typeparam T
+
+@if (Visible)
+{
+    <div class="@GetCssClasses()" id="@_dateBoxId">
+        <input @ref=dateInputElement type="text"
+               value="@Date"
+               class="w-100"
+               placeholder="@NullText"
+               @onchange=OnDateChanged
+               @onfocusout=OnFocusOut
+               @attributes=Attributes
+               readonly="@Readonly"
+               disabled="@(!Enabled)" />
+        @if (ClearButtonVisible && !Readonly && Enabled)
+        {
+            <RyaButton Click=OnClearButtonClick
+                       CssClass="d-flex align-items-center rya-clear-btn"
+                       IconCssClass="fa-regular fa-circle-xmark">
+            </RyaButton>
+        }
+
+        <RyaButton Click=OnDropDownButtonClick
+                   CssClass="d-flex align-items-center rya-calendar-btn"
+                   Enabled=@(Enabled && !Readonly)
+                   IconCssClass="fa-regular fa-calendar-days">
+        </RyaButton>
+
+        <RyaDateBoxDropDown T=T Enabled=@Enabled @bind-Visible=_dropDownVisible DateBoxElement="@($"#{_dateBoxId}")" SelectedDate="@Date" SelectedDateChanged="async (e) => { await OnDateChanged(new ChangeEventArgs(){ Value = e}); }"></RyaDateBoxDropDown>
+    </div>
+}
+
+@code {
+    #region Fields
+
+    private string _dateBoxId = $"rdb_{Guid.NewGuid()}";
+
+    private ElementReference dateInputElement;
+
+    private IJSObjectReference? _module;
+
+    private bool _disposed;
+
+    private bool _dropDownVisible;
+
+    #endregion
+
+    #region Properties
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter]
+    public T? Date { get; set; }
+
+    [Parameter]
+    public EventCallback<T> DateChanged { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? NullText { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ClearButtonVisible { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool Readonly { get; set; }
+
+    #endregion
+
+    #region Event Handlers
+
+    private async Task OnClearButtonClick(MouseEventArgs e)
+    {
+        await ChangeValue(default(T));
+    }
+
+    private void OnDropDownButtonClick(MouseEventArgs e)
+    {
+        if (!Enabled || !Visible) return;
+        _dropDownVisible = true;
+    }
+
+    private async Task OnDateChanged(ChangeEventArgs e)
+    {
+        if (TryParseValue(e.Value, out T result))
+        {
+            await ChangeValue(result);
+        }
+        else
+        {
+            await _module.InvokeVoidAsync("resetDateBoxToPreviousValue", dateInputElement, Date.ToString());
+        }
+    }
+
+    private void OnFocusOut(FocusEventArgs e)
+    {
+        _dropDownVisible = false;
+    }
+
+    #endregion
+
+    #region Lifecycle Methods
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        if (_module != null)
+        {
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RyaComponents/Components/Common/DateBox/RyaDateBox.razor.js");
+        }
+    }
+    #endregion
+
+    #region Utility Methods
+
+    private string GetCssClasses()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "rya-editor", "position-relative", CssClass);
+    }
+
+    private bool TryParseValue(object? inputValue, out T result)
+    {
+        try
+        {
+            var isParsed = DateTypeFactory.TryCreateDateTypeInstanceFromObject<T>((T)inputValue, out DateType dt);
+            result = isParsed ? (T)dt.GetSourceObject() : default(T);
+            return isParsed;
+        }
+        catch
+        {
+            result = default(T);
+            return false;
+        }
+    }
+
+    private async Task ChangeValue(T value)
+    {
+        if (!Readonly && Enabled)
+        {
+            Date = value;
+            await DateChanged.InvokeAsync(Date);
+        }
+    }
+
+    #endregion
+}

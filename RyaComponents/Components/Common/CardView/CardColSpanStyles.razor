@@ -1,0 +1,51 @@
+﻿<style>
+    @@media (1200px &lt;= width) {
+        #@(CardsContentElementId) {
+            grid-template-columns: repeat(@CardColSpanXl, 1fr);
+        }
+    }
+    
+    @@media (992px &lt;= width &lt; 1200px) {
+        #@(CardsContentElementId) {
+            grid-template-columns: repeat(@CardColSpanLg, 1fr);
+        }
+    }
+
+    @@media (768px &lt;= width &lt; 992px) {
+        #@(CardsContentElementId) {
+            grid-template-columns: repeat( @CardColSpanMd, 1fr);
+        }
+    }
+
+    @@media (576px &lt;= width &lt; 768px) {
+        #@(CardsContentElementId) {
+            grid-template-columns: repeat( @CardColSpanSm, 1fr);
+        }
+    }
+
+    @@media (width &lt; 576px) {
+        #@(CardsContentElementId) {
+            grid-template-columns: repeat( @CardColSpanXs, 1fr);
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public required string CardsContentElementId { get; set; }
+
+    [Parameter]
+    public int CardColSpanLg { get; set; }
+
+    [Parameter]
+    public int CardColSpanMd { get; set; }
+
+    [Parameter]
+    public int CardColSpanSm { get; set; }
+
+    [Parameter]
+    public int CardColSpanXl { get; set; }
+
+    [Parameter]
+    public int CardColSpanXs { get; set; }
+}

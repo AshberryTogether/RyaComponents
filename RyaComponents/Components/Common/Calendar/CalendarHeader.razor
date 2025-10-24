@@ -1,0 +1,47 @@
+﻿@using System.Globalization
+<div class="w-100 d-flex justify-content-between rya-calendar-header">
+    <div class="d-flex align-items-center">
+        <span style="font-size:larger;">@GetHeaderText()</span>
+    </div>
+    <div class="d-flex justify-content-between" style="width: 80px;">
+        <RyaButton Click="OnPrevButtonClick" CssClass="rya-calendar-btn" IconCssClass="fa-solid fa-chevron-left" Enabled=@(!VisibleDate.DateFirstMonthFirstYear())></RyaButton>
+        <RyaButton Click="OnNextButtonClick" CssClass="rya-calendar-btn" IconCssClass="fa-solid fa-chevron-right" Enabled=@(!VisibleDate.DateLastMonthLastYear())></RyaButton>
+    </div>
+</div>
+
+@code {
+    #region Properties
+    [Parameter]
+    public DateType VisibleDate { get; set; }
+
+    [Parameter]
+    public EventCallback<DateType> VisibleDateChanged { get; set; }
+    #endregion
+
+    #region Event Handlers
+    private async Task OnPrevButtonClick()
+    {
+        if (VisibleDate.DateFirstMonthFirstYear()) return;
+        await SetVisibleDate(VisibleDate.AddMonths(-1));
+    }
+
+    private async Task OnNextButtonClick()
+    {
+        if (VisibleDate.DateLastMonthLastYear()) return;
+        await SetVisibleDate(VisibleDate.AddMonths(1));
+    }
+    #endregion
+
+    #region Utility Methods
+    private async Task SetVisibleDate(DateType value)
+    {
+        VisibleDate = value;
+        await VisibleDateChanged.InvokeAsync(VisibleDate);
+    }
+
+    private string GetHeaderText()
+    {
+        return $"{VisibleDate.GetMonthName()} {VisibleDate.Year}";
+    }
+    #endregion
+}

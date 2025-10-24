@@ -1,0 +1,101 @@
+﻿@using System.ComponentModel
+@if (Visible)
+{
+    <div class="@GetTextBoxCssClass()">
+        <input type="@GetInputType()" 
+            value="@Text" 
+            class="w-100"
+            placeholder="@NullText"
+            @onchange=OnTextChanged 
+            @attributes=Attributes
+            readonly="@Readonly" 
+            disabled="@(!Enabled)" />
+        @if (ClearButtonVisible && !Readonly && Enabled)
+        {
+            <RyaButton 
+                Click=OnClearButtonClick 
+                CssClass="d-flex align-items-center rya-clear-btn" 
+                IconCssClass="fa-regular fa-circle-xmark">
+            </RyaButton>
+        }
+    </div>
+}
+
+@code {
+    #region Properties
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? NullText { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ClearButtonVisible { get; set; }
+    
+    [DefaultValue(false)]
+    [Parameter]
+    public bool Password { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? Text { get; set; }
+
+    [Parameter]
+    public EventCallback<string> TextChanged { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool Readonly { get; set; }
+
+    #endregion
+    
+    #region Event Handlers
+
+    private async Task OnClearButtonClick(MouseEventArgs e)
+    {
+        await ChangeText(string.Empty);
+    }
+
+    private async Task OnTextChanged(ChangeEventArgs e)
+    {
+        await ChangeText(e.Value?.ToString() ?? string.Empty);
+    }
+
+    #endregion
+
+    #region Utility Methods
+    private string GetTextBoxCssClass()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "rya-editor", CssClass);
+    }
+
+    private string GetInputType()
+    {
+        return Password ? "password" : "text";
+    }
+
+    private async Task ChangeText(string? text)
+    {
+        if (!Readonly && Enabled)
+        {
+            Text = text;
+            await TextChanged.InvokeAsync(Text);
+        }
+    }
+    #endregion
+}

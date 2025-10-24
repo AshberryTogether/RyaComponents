@@ -1,0 +1,161 @@
+﻿@using System.ComponentModel
+@if (Visible)
+{
+    <CardColSpanStyles CardsContentElementId="@_cardsContentElementId" 
+        CardColSpanXl="@GetColSpan(0)" 
+        CardColSpanLg="@GetColSpan(1)" 
+        CardColSpanMd="@GetColSpan(2)" 
+        CardColSpanSm="@GetColSpan(3)" 
+        CardColSpanXs="@GetColSpan(4)"></CardColSpanStyles>
+    
+    <div class="rya-cards overflow-hidden d-flex flex-column @CssClass">
+        @if (ShowToolbar)
+        {
+            <div class="rya-cards-toolbar d-flex p-2">
+                @ToolbarTemplate
+            </div>
+        }
+
+        <div class="flex-grow-1 overflow-auto">
+            <div class="rya-cards-content d-grid p-2 gap-1" id="@_cardsContentElementId">
+                <CascadingValue TValue="RyaCardView" Value="this">
+                    @Columns
+                </CascadingValue>
+                @for (int i = PageIndex * CardsPerPage; i < Math.Min(PageIndex * CardsPerPage + CardsPerPage, DataCount); i++)
+                {
+                    int j = i;
+                    var record = DataBindingHelper.GetRecordFromBoundDataSource(Data, j);
+                    <RyaComponents.RyaCard CssClass="rya-cardview-card" ShowHeader=false>
+                        <BodyContent>
+                            @if (CardTemplate is null)
+                            {
+                                <div class="w-100 d-flex flex-column p-3 gap-2" @onclick="async (e) => await OnCardClick(record, e)">
+                                    @foreach (IRyaCardViewColumn column in _columns)
+                                    {
+                                        <div class="d-flex w-100">
+                                            <div style="white-space:nowrap; text-overflow:ellipsis; width: 100px;">
+                                                <span><strong>@column.FieldName</strong></span>
+                                            </div>
+                                            <div style="white-space:nowrap; text-overflow:ellipsis;">
+                                                <span>@DataBindingHelper.GetRecordProperty(record, column.FieldName)</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="rya-cardview-template-content" @onclick="async (e) => await OnCardClick(record, e)">
+                                    @CardTemplate(new CardTemplateContext(record, this, j))
+                                </div>
+                            }
+
+                        </BodyContent>
+                    </RyaComponents.RyaCard>
+                }
+            </div>
+        </div>
+        <div class="rya-cards-footer d-flex align-items-center p-2">
+            <RyaPager @bind-ActivePageIndex=PageIndex PageCount="@((int)Math.Ceiling((double)DataCount/CardsPerPage))"></RyaPager>
+        </div>
+    </div>
+}
+
+@code {
+    #region Fields
+    private string _cardsContentElementId = string.Empty;
+    private IList<IRyaCardViewColumn> _columns = [];
+    private List<int> _colSpans = [];
+    #endregion
+
+    #region Properties
+    private int DataCount => DataBindingHelper.GetCountFromBoundObject(Data);
+
+    [Parameter]
+    public RenderFragment<CardTemplateContext>? CardTemplate { get; set; }
+
+    [Parameter]
+    public RenderFragment? ToolbarTemplate { get; set; }
+
+    [Parameter]
+    public RenderFragment? Columns { get; set; }
+
+    [Parameter]
+    public EventCallback<object> CardClick { get; set; }
+
+    [DefaultValue(10)]
+    [Parameter]
+    public int CardsPerPage { get; set; } = 10;
+
+    [DefaultValue(0)]
+    [Parameter]
+    public int PageIndex { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public object? Data { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ShowToolbar { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    [Parameter]
+    public int CardColSpanLg { get; set; }
+
+    [Parameter]
+    public int CardColSpanMd { get; set; }
+
+    [Parameter]
+    public int CardColSpanSm { get; set; }
+
+    [Parameter]
+    public int CardColSpanXl { get; set; }
+
+    [Parameter]
+    public int CardColSpanXs { get; set; }
+    #endregion
+
+    #region Lifecycle Methods
+    protected override async Task OnInitializedAsync()
+    {
+        _cardsContentElementId = $"card-content-{Guid.NewGuid()}";
+        _columns = new List<IRyaCardViewColumn>();
+        _colSpans = [CardColSpanXl, CardColSpanLg, CardColSpanMd, CardColSpanSm, CardColSpanXs];
+        await base.OnInitializedAsync();
+    }
+    #endregion
+
+    #region Event Handlers
+    private async Task OnCardClick(object record, MouseEventArgs e)
+    {
+        await CardClick.InvokeAsync(record);
+    }
+    #endregion
+
+    #region Utility Methods
+
+    public void AddColumn(IRyaCardViewColumn column)
+    {
+        _columns.Add(column);
+    }
+
+    private int GetColSpan(int colSpanBreakPointIndex)
+    {
+        if (_colSpans[colSpanBreakPointIndex] > 0) return _colSpans[colSpanBreakPointIndex];
+        return _colSpans.Skip(colSpanBreakPointIndex).SkipWhile(cs => cs <= 0).FirstOrDefault();
+    }
+
+    private string GetCssClass()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "gap-1", CssClass);
+    }
+    #endregion
+}

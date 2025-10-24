@@ -1,0 +1,69 @@
+﻿@using System.ComponentModel
+@typeparam T
+
+<div class="@GetCalendarCssClasses()">
+    <CalendarHeader VisibleDate="@VisibleDateGeneral" VisibleDateChanged="OnVisibleDateChanged"></CalendarHeader>
+    <CalendarBody VisibleDate="@VisibleDateGeneral" SelectedDate=@SelectedDateGeneral SelectedDateChanged="OnSelectedDateChanged"></CalendarBody>
+</div>
+
+@code {
+    #region Properties
+    private DateType? VisibleDateGeneral { get; set; }
+    private DateType? SelectedDateGeneral { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [Parameter]
+    public T SelectedDate { get; set; }
+
+    public EventCallback<DateType> VisibleDateChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<T> SelectedDateChanged { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+    #endregion
+
+    #region Lifecycle Methods
+    protected override void OnInitialized()
+    {
+        VisibleDateGeneral = DateTypeFactory.GenerateDefaultValue<T>();
+        base.OnInitialized();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (DateTypeFactory.TryCreateDateTypeInstanceFromObject(SelectedDate, out DateType sd))
+        {
+            SelectedDateGeneral = sd;
+        }
+        base.OnParametersSet();
+    }
+    #endregion
+
+    #region Event Handlers
+    private async Task OnVisibleDateChanged(DateType newDate)
+    {
+        VisibleDateGeneral = newDate;
+        await VisibleDateChanged.InvokeAsync(VisibleDateGeneral);
+    }
+
+    private async Task OnSelectedDateChanged(DateType newDate)
+    {
+        SelectedDate = (T)newDate.GetSourceObject();
+        await SelectedDateChanged.InvokeAsync(SelectedDate);
+    }
+
+    #endregion
+
+    #region Utility Methods
+    private string GetCalendarCssClasses()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "flex-column", "rya-calendar", CssClass);
+    }
+    #endregion
+}

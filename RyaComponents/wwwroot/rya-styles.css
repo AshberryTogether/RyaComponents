@@ -1,0 +1,364 @@
+﻿:root {
+    --rya-primary-color: rgba(106, 128, 247);
+    --rya-secondary-color: rgba(88, 111, 237);
+    --rya-text-color: black;
+    --rya-disabled-color: rgba(144, 160, 245);
+}
+
+.rya-btn {
+    cursor: pointer;
+    border-radius: 15px;
+    border: none;
+    padding: 5px 15px;
+    background-color: var(--rya-primary-color);
+    color: white;
+    font-size: 1rem;
+}
+
+.rya-btn:hover {
+    background-color: var(--rya-secondary-color);
+}
+
+.rya-btn-disabled {
+    background-color: rgba(144, 160, 245);
+    cursor: auto;
+}
+
+.rya-btn-disabled:hover {
+    background-color: rgba(144, 160, 245);
+}
+
+.rya-chk-element input {
+    appearance: none;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    position: absolute;
+}
+
+.rya-chk-box{
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.rya-chk-box-checked {
+    fill: rgba(106, 128, 247);
+    width: 100%;
+    height: 100%;
+}
+
+.rya-chk-box-checked path {
+    stroke: white;
+}
+
+.rya-chk-box-unchecked {
+    width: 100%;
+    height: 100%;
+}
+
+.rya-chk-box-disabled{
+    cursor: auto;
+}
+
+.rya-chk-box-disabled .rya-chk-box-unchecked rect {
+    stroke: rgb(230, 230, 230);
+}
+
+.rya-chk-box-disabled .rya-chk-box-checked *{
+    fill: rgb(230, 230, 230);
+}
+
+.rya-calendar{
+    border: 1px solid rgba(230, 230, 230);
+    width: 280px;
+}
+
+.rya-calendar-header, .rya-calendar-body {
+    padding: 0.5rem;
+}
+
+.rya-calendar-header {
+    background-color: rgba(106, 128, 247, 0.3);
+}
+
+.rya-calendar .rya-calendar-btn {
+    background-color: transparent;
+    color: black;
+}
+
+.rya-calendar-body td, .rya-calendar-body th {
+    font-weight: 300;
+    font-size: small;
+    text-align: center;
+    padding: 6px;
+}
+
+.rya-calendar-body .date-cell-disabled {
+    color: rgba(20, 20, 20, 0.5);
+}
+
+.rya-calendar-body .date-cell > a {
+    border-radius: 50%;
+    padding: 5px;
+    display: inline-block;
+    line-height: 100%;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+}
+
+.rya-calendar-body .date-cell > a:hover {
+    background-color: rgba(50,50,50,0.1);
+}
+
+.rya-calendar-body .date-cell-today > a {
+    color: black;
+    border-color: rgba(106, 128, 247);
+    border-width: 1px;
+    border-style: solid;
+}
+
+.rya-calendar-body .date-cell-selected > a {
+    background-color: rgba(106, 128, 247);
+    font-weight: 500;
+}
+
+.rya-calendar-body .date-cell-today > a:hover {
+    color: black;
+}
+
+.rya-calendar-body .date-row {
+    height: 35px;
+}
+
+.rya-editor{
+    border: 1px solid lightgrey;
+}
+
+.rya-editor > input{
+    border: none;
+    outline: 0;
+    padding: 0.3rem;
+}
+
+.rya-clear-btn{
+    padding: 0.2rem;
+    border-radius: 0;
+    background-color: transparent;
+    color: lightgrey;
+    font-weight: 600;
+}
+
+.rya-clear-btn:hover {
+    color: grey;
+    background-color: transparent;
+}
+
+.rya-editor:has(:focus) {
+    outline: 0.1rem solid rgba(106, 128, 247);
+}
+
+.rya-calendar-btn {
+    background-color: transparent;
+    color: grey;
+    padding: 0px 10px;
+    border-left: 1px solid lightgrey;
+    border-radius: 0;
+}
+
+.rya-calendar-btn:hover {
+    background-color: rgba(50,50,50,0.1);
+}
+
+.rya-editor .rya-drop-down {
+    padding: 0px;
+}
+
+.rya-drop-down-btn {
+    background-color: transparent;
+    color: grey;
+    padding: 0px 10px;
+    border-left: 1px solid lightgrey;
+    border-radius: 0;
+}
+
+.rya-drop-down-btn:hover {
+    background-color: rgba(50,50,50,0.1);
+}
+
+.rya-editor > .rya-textarea {
+    border: none;
+    outline: 0;
+    padding-right: 2rem;
+}
+
+.rya-textarea + .rya-clear-btn{
+    top: calc(50% - 11.2px);
+    right: 1rem;
+}
+
+.rya-pager > .rya-pager-button{
+    height: 30px;
+    width: 30px;
+    padding: 4px;
+    border-radius: 0;
+    background-color: transparent;
+    color: darkslategrey;
+    border: 1px solid lightgrey;
+}
+
+.rya-pager > .rya-pager-button:disabled {
+    color: lightgray;
+}
+
+.rya-pager > .rya-pager-button:hover {
+    background-color: rgba(50,50,50,0.1);
+}
+
+.rya-pager > .rya-pager-button:disabled {
+    background-color: transparent;
+}
+
+.rya-pager button.rya-pager-button-active {
+    background-color: rgba(106, 128, 247);
+    color: white;
+}
+
+.rya-pager button.rya-pager-button-active:hover {
+    background-color: rgba(106, 128, 247);
+    color: white;
+}
+
+.rya-popup{
+    background-color: white;
+    border: 1px solid lightgrey;
+    border-radius: 0.5rem;
+}
+
+.rya-popup .rya-popup-header {
+    background-color: lightgrey;
+    padding: 0.2rem;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.rya-dropdown {
+    background-color: white;
+    border: 1px solid lightgrey;
+    border-radius: 0.2rem;
+}
+
+.rya-dropdown .rya-dropdown-header {
+    background-color: lightgrey;
+    padding: 0.2rem;
+    border-top-left-radius: 0.2rem;
+    border-top-right-radius: 0.2rem;
+}
+
+.rya-close-btn {
+    padding: 0;
+    border-radius: 0;
+    background-color: transparent;
+    color: darkgrey;
+    font-weight: 600;
+}
+
+.rya-close-btn:hover {
+    background-color: transparent;
+    color: dimgrey;
+}
+
+.rya-menu{
+    white-space: nowrap;
+    border: 1px solid lightgrey;
+}
+
+.rya-menu-item-btn{
+    background-color: transparent;
+    color: black;
+    border-radius: 0;
+}
+
+.rya-menu-item-btn:hover {
+    background-color: rgba(0,0,0, 0.1);
+}
+
+.rya-menu-item-btn:disabled {
+    background-color: transparent;
+    color: lightgrey;
+}
+
+.rya-menu .rya-hamburger-btn {
+
+}
+
+.rya-upload .rya-upload-textbox{
+    outline: 0;
+}
+
+.rya-card{
+    border: 1px solid lightgrey;
+    border-radius: 0.4rem;
+}
+
+.rya-card .rya-card-header {
+    border-top-left-radius: 0.4rem;
+    border-top-right-radius: 0.4rem;
+    border-bottom: 1px solid lightgrey;
+    background-color: rgba(0,0,0,0.1);
+}
+
+.rya-card .rya-card-header.card-collapsed {
+    border:none;
+    border-radius: 0.4rem;
+}
+
+.rya-card .rya-card-footer {
+    border-bottom-left-radius: 0.4rem;
+    border-bottom-right-radius: 0.4rem;
+    border-top: 1px solid lightgrey;
+    background-color: rgba(0,0,0,0.1);
+}
+
+.rya-card-header .rya-expand-button{
+    background-color: transparent;
+    color: black;
+    border-radius: 100%;
+    width: 32px;
+    height: 32px;
+}
+
+.rya-card-header .rya-expand-button:hover {
+    background-color: rgba(130, 130, 130, 0.3);
+}
+
+.rya-cards{
+    border: 1px solid lightgrey;
+    border-radius: 0.4rem;
+    overflow: auto;
+}
+
+.rya-cards .rya-cardview-card:hover {
+    background-color: rgba(130, 130, 130, 0.3);
+    cursor: pointer;
+}
+
+.rya-combo-item{
+    background-color: transparent;
+    color: black;
+    border-radius: 0;
+}
+
+.rya-combo-item:hover {
+    background-color: rgba(130, 130, 130, 0.3);
+}
+
+.rya-combo-item.active {
+    background-color: rgba(106, 128, 247);
+    color: white;
+}
+
+.rya-portal.shading{
+    background-color: rgba(0,0,0, 0.5);
+}

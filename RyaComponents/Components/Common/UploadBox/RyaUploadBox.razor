@@ -1,0 +1,224 @@
+﻿@using System.ComponentModel
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@if (Visible)
+{
+    <div class="@GetCssClass()">
+        <InputFile @ref=_uploadInputElement
+            class="d-none"
+            OnChange="OnFileSelectionChanged" 
+            accept="@(AcceptedFileTypes is null ? null : string.Join(',', AcceptedFileTypes.Select(ft => $".{ft}")))"
+            multiple="@AllowMultiFileUpload">
+        </InputFile>
+
+        <RyaTextBox NullText="@NullText" 
+            Readonly=true Enabled=Enabled 
+            Text="@GetText()"
+            CssClass="rya-upload-textbox w-100"></RyaTextBox>
+
+        @if (ClearButtonVisible && !Readonly && Enabled)
+        {
+            <RyaButton Click=OnClearButtonClick
+                       CssClass="d-flex align-items-center rya-clear-btn"
+                       IconCssClass="fa-regular fa-circle-xmark">
+            </RyaButton>
+        }
+
+        <RyaButton title="Select Files"
+                   Click="OnFileSelectButtonClick"
+                   CssClass="d-flex align-items-center rya-drop-down-btn"
+                   Enabled=@(Enabled && !Readonly)
+                   IconCssClass="fa-solid fa-file-import">
+        </RyaButton>
+
+        <RyaButton title="Upload"
+                   Click="OnUploadButtonClick"
+                   CssClass="d-flex align-items-center rya-drop-down-btn"
+                   Enabled=@(Enabled && !Readonly)
+                   Visible=@(_selectedFiles is null ? false : _selectedFiles.Count() > 0)
+                   IconCssClass="fa-solid fa-upload">
+        </RyaButton>
+    </div>
+}
+
+@code {
+    #region Fields
+
+    private InputFile _uploadInputElement = default!;
+    private IJSObjectReference? _module;
+    private bool _disposed;
+    private IEnumerable<IBrowserFile> _selectedFiles = [];
+
+    #endregion
+
+    #region Properties
+    [Parameter]
+    public EventCallback<IReadOnlyList<IBrowserFile>> FilesUplaoding { get; set; }
+
+    [Parameter]
+    public EventCallback<IEnumerable<IBrowserFile>> SelectedFilesChanged { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool AllowMultiFileUpload { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public List<string>? AcceptedFileTypes { get; set; }
+
+    [DefaultValue(512_000)]
+    [Parameter]
+    public int? MaxFileSize { get; set; } = 512_000;
+    
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? NullText { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ClearButtonVisible { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool Readonly { get; set; }
+
+    #endregion
+
+    #region Lifecycle Methods
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/RyaComponents/Components/Common/UploadBox/RyaUploadBox.razor.js");
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        if (_module != null)
+        {
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+    private async Task OnFileSelectionChanged(InputFileChangeEventArgs e)
+    {
+        if (AllowMultiFileUpload)
+        {
+            _selectedFiles = await GetValidFilesAndAddValidationErrors(e.GetMultipleFiles());
+        }
+        else
+        {
+            _selectedFiles = await GetValidFilesAndAddValidationErrors(e.File);
+        }
+        await SelectedFilesChanged.InvokeAsync(_selectedFiles);
+    }
+
+    private async Task OnClearButtonClick(MouseEventArgs e)
+    {
+        _selectedFiles = Enumerable.Empty<IBrowserFile>();
+        await SelectedFilesChanged.InvokeAsync(_selectedFiles);
+    }
+
+    private async Task OnFileSelectButtonClick(MouseEventArgs e)
+    {
+        if (_module is null) return;
+        await _module.InvokeVoidAsync("StartFileSelection", _uploadInputElement);
+    }
+
+    private async Task OnUploadButtonClick(MouseEventArgs e)
+    {
+        await FilesUplaoding.InvokeAsync(_selectedFiles as IReadOnlyList<IBrowserFile>);
+        _selectedFiles = Enumerable.Empty<IBrowserFile>();
+        await SelectedFilesChanged.InvokeAsync(_selectedFiles);
+    }
+
+    #endregion
+
+    #region Utility Methods
+
+    private async Task<IEnumerable<IBrowserFile>> GetValidFilesAndAddValidationErrors(IEnumerable<IBrowserFile> files)
+    {
+        if (MaxFileSize.HasValue)
+        {
+            files = files.Where(f => f.Size <= MaxFileSize.Value).ToList();
+        }
+        if (AcceptedFileTypes is not null && AcceptedFileTypes.Count > 0)
+        {
+            files = files.Where(f => AcceptedFileTypes.Contains(GetFileType(f.Name))).ToList();
+        }
+        return files;
+    }
+
+    private async Task<IEnumerable<IBrowserFile>> GetValidFilesAndAddValidationErrors(IBrowserFile file)
+    {
+        List<IBrowserFile> files = [file];
+        return await GetValidFilesAndAddValidationErrors(files);
+    }
+
+    private string GetFileType(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName) || !fileName.Contains('.'))
+        {
+            return string.Empty;
+        }
+        return fileName.Split('.').Last();
+    }
+
+    private string GetText()
+    {
+        string text = string.Empty;
+        if (_selectedFiles is not null && _selectedFiles.Count() > 0)
+        {
+            if (_selectedFiles.Count() > 1)
+            {
+                text = $"Files Selected: {_selectedFiles.Count()}";
+            }
+            else
+            {
+                text = _selectedFiles.First().Name;
+            }
+        }
+        return text;
+    }
+
+    private string GetCssClass()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "rya-editor", "rya-upload", CssClass);
+    }
+
+    #endregion
+}

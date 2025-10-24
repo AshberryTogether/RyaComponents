@@ -1,0 +1,130 @@
+﻿@using System.ComponentModel
+@typeparam T where T: struct
+
+@if (Visible)
+{
+    <div class="@GetCssClass()">
+        <input type="number"
+               value="@Value"
+               class="w-100"
+               placeholder="@NullText"
+               @attributes=Attributes
+               @onchange=OnValueChanged
+               readonly="@Readonly"
+               disabled="@(!Enabled)" />
+        @if (ClearButtonVisible && !Readonly && Enabled)
+        {
+            <RyaButton Click=OnClearButtonClick
+                       CssClass="d-flex align-items-center rya-clear-btn"
+                       IconCssClass="fa-regular fa-circle-xmark">
+            </RyaButton>
+        }
+    </div>
+}
+
+@code {
+    #region Fields
+
+    private readonly HashSet<Type> _validTypes = [typeof(int), typeof(float), typeof(double), typeof(decimal), typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(uint), typeof(long), typeof(ulong), typeof(nint), typeof(nuint)];
+
+    #endregion
+
+    #region Properties
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    [Parameter]
+    public T Value { get; set; }
+
+    [Parameter]
+    public EventCallback<T> ValueChanged { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [DefaultValue(null)]
+    [Parameter]
+    public string? NullText { get; set; }
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool ClearButtonVisible { get; set; }
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    [DefaultValue(true)]
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [DefaultValue(false)]
+    [Parameter]
+    public bool Readonly { get; set; }
+
+    #endregion
+
+    #region Event Handlers
+    private async Task OnClearButtonClick(MouseEventArgs e)
+    {
+        await ChangeValue(default(T));
+    }
+
+    private async Task OnValueChanged(ChangeEventArgs e)
+    {
+        if (TryParseValue(e.Value, out T result))
+        {
+            await ChangeValue(result);
+        }
+    }
+    #endregion
+
+    #region Lifecycle Methods
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsValidType(typeof(T)))
+        {
+            throw new ArgumentOutOfRangeException("Only numeric types are available");
+        }
+        await base.OnInitializedAsync();
+    }
+    #endregion
+
+    #region Utility Methods
+
+    private string GetCssClass()
+    {
+        return CssClassHelper.CombineCssClasses("d-flex", "rya-editor", CssClass);
+    }
+
+    private bool TryParseValue(object? inputValue, out T result)
+    {
+        try
+        {
+            result = (T)Convert.ChangeType(inputValue, typeof(T));
+            return true;
+        }
+        catch
+        {
+            result = default(T);
+            return false; 
+        }
+    }
+
+    private async Task ChangeValue(T value)
+    {
+        if (!Readonly && Enabled)
+        {
+            Value = value;
+            await ValueChanged.InvokeAsync(Value);
+        }
+    }
+
+    private bool IsValidType(Type type)
+    {
+        return _validTypes.Contains(type);
+    }
+
+    #endregion
+}
