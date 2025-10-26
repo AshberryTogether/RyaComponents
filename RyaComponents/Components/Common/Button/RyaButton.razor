@@ -2,7 +2,7 @@
 @if(Visible) {
     <button class="@GetCssClass()"
             type="@GetButtonType()"
-            @onclick=Click
+            @onclick=OnClick
             @attributes="Attributes"
             disabled="@(!Enabled)">
         @if(ChildContent is null) {
@@ -50,6 +50,14 @@
     [DefaultValue(false)]
     [Parameter]
     public bool SubmitFormOnClick { get; set; }
+    #endregion
+
+    #region Event Handlers
+    private async Task OnClick(MouseEventArgs e) {
+        if(Enabled) {
+            await Click.InvokeAsync(e);
+        }
+    }
     #endregion
 
     #region Utility Methods

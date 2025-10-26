@@ -1,0 +1,317 @@
+﻿@using AngleSharp.Dom
+@using Bunit;
+@using Microsoft.AspNetCore.Components.Forms
+
+@inherits BunitTestContext
+
+@code {
+    private IElement GetButtonElement<T>(IRenderedComponent<T> cut) where T : IComponent {
+        return cut.Find("button");
+    }
+
+    private bool ContainsButtonElement<T>(IRenderedComponent<T> cut) where T : IComponent {
+        return cut.FindAll("button").Count > 0;
+    }
+
+    [Test]
+    public void RyaButton_DefaultConfiguration_ButtonWithTwoSpanElementsRendered() {
+        //Act
+        var cut = RenderComponent<RyaButton>();
+
+        //Assert
+        cut.MarkupMatches(
+            @<button class="rya-btn" type="button">
+                <span class="rya-btn-icon"></span>
+                <span class="rya-btn-txt"></span>
+            </button>);
+    }
+
+    [TestCase("")]
+    [TestCase(null)]
+    [TestCase("Test")]
+    [TestCase(" Test ")]
+    [TestCase("  ")]
+    [TestCase("汉语")]
+    [TestCase("Тест")]
+    public void Text_SetText_TextRenderedInSpanElement(string text) {
+        //Arrange
+        string buttonTextSpanClassName = "rya-btn-txt";
+
+        //Act
+        var cut = RenderComponent<RyaButton>(
+            parameters => parameters.Add(p => p.Text, text));
+        var buttonTextElement = cut.Find($".{buttonTextSpanClassName}");
+
+        //Assert
+        buttonTextElement.MarkupMatches(
+            @<span class="@buttonTextSpanClassName">@text</span>);
+    }
+
+    [TestCaseSource(nameof(GetAttributeTestCases))]
+    public void Attributes_SetAdditionalAttributes_AttributesRenderedInRootElement(
+        Dictionary<string, object> attributes) {
+        //Act
+        var cut = RenderComponent<RyaButton>(
+            parameters => {
+                foreach(var attr in attributes) {
+                    parameters.AddUnmatched(attr.Key, attr.Value);
+                }
+            }
+        );
+
+        //Assert
+        foreach(var attr in attributes) {
+            Assert.AreEqual(
+                attr.Value.ToString(), 
+                GetButtonElement(cut).GetAttribute(attr.Key));
+        }
+    }
+
+    private static IEnumerable<TestCaseData> GetAttributeTestCases() {
+        yield return new TestCaseData(new Dictionary<string, object> {
+            { "data-test", "test-value" },
+        });
+        yield return new TestCaseData(new Dictionary<string, object> {
+            { "my-param", 3 },
+            { "my-param-1", "hello" },
+            { "test", 2.5d },
+        });
+        yield return new TestCaseData(new Dictionary<string, object> {
+        });
+    }
+
+    [Test]
+    public void Visible_SetToTrue_RendersButton() {
+        //Act
+        var cut = RenderComponent<RyaButton>(
+            parameters => parameters.Add(p => p.Visible, true));
+
+        //Assert
+        Assert.IsNotNull(GetButtonElement(cut));
+    }
+
+    [Test]
+    public void Visible_SetToFalse_ThrowsElementNotFoundExceptionForButtonElement() {
+        //Act
+        var cutNotVisible = RenderComponent<RyaButton>(
+            parameters => parameters.Add(p => p.Visible, false));
+
+        //Assert
+        Assert.Throws<Bunit.ElementNotFoundException>(
+            () => GetButtonElement(cutNotVisible));
+    }
+
+    [Test]
+    public void Visible_SetVisibleDynamically_VisibilityUpdates() {
+        //Act
+        var cut = RenderComponent<RyaButton>();
+        var buttonVisible = ContainsButtonElement(cut);
+
+        cut.SetParametersAndRender(parameters => parameters.Add(p => p.Visible, false));
+        var buttonVisibleAfterHiding = ContainsButtonElement(cut);
+        
+        cut.SetParametersAndRender(parameters => parameters.Add(p => p.Visible, true));
+        var buttonVisibleAfterShowing = ContainsButtonElement(cut);
+
+        //Assert
+        Assert.IsTrue(buttonVisible);
+        Assert.IsFalse(buttonVisibleAfterHiding);
+        Assert.IsTrue(buttonVisibleAfterShowing);
+    }
+
+    [Test]
+    public void SubmitFormOnClick_SetToTrue_RaisesFormSubmit() {
+        // Arrange
+        bool formSubmitted = false;
+
+        // Act
+        var cut = RenderComponent<EditForm>(parameters => parameters
+            .Add(p => p.OnSubmit, (EditContext _) => formSubmitted = true)
+            .Add(p => p.Model, new())
+            .Add(p => p.ChildContent,
+                ctx => @<RyaButton SubmitFormOnClick="true" />)
+        );
+        GetButtonElement(cut).Click();
+
+        // Assert
+        Assert.IsTrue(formSubmitted);
+    }
+
+    [Test]
+    public void SubmitFormOnClick_SetToFalse_DoesNotRaiseFormSubmit() {
+        // Arrange
+        bool formSubmitted = false;
+
+        // Act
+        var cut = RenderComponent<EditForm>(parameters => parameters
+            .Add(p => p.OnSubmit, (EditContext _) => formSubmitted = true)
+            .Add(p => p.Model, new())
+            .Add(p => p.ChildContent,
+                ctx => @<RyaButton SubmitFormOnClick="false" />)
+        );
+        GetButtonElement(cut).Click();
+
+        // Assert
+        Assert.IsFalse(formSubmitted);
+    }
+
+    [Test]
+    public void Click_SetHandler_HandlerRaised() {
+        //Arrange
+        bool raised = false;
+
+        //Act
+        var cut = RenderComponent<RyaButton>(parameters => {
+            parameters.Add(p => p.Click, (e) => raised = true);
+        });
+        GetButtonElement(cut).Click();
+
+        //Assert
+        Assert.IsTrue(raised);
+    }
+
+    [TestCase("my-custom-css")]
+    [TestCase("s")]
+    [TestCase("very-loooooooooooooooooooooooooooooooong-custom-css-class-name")]
+    [TestCase("spoiled-класс")]
+    public void CssClass_ValidClassNames_AppliedToRootElement(string customCssClass) {
+        //Act
+        var cut = RenderComponent<RyaButton>(parameters => {
+            parameters.Add(p => p.CssClass, customCssClass);
+        });
+        
+        //Assert
+        Assert.IsTrue(GetButtonElement(cut).ClassList.Contains(customCssClass));
+    }
+
+    [TestCase("123abc")]
+    [TestCase("-name")]
+    [TestCase("my@class")]
+    [TestCase("😀")]
+    public void CssClass_InvalidClassNames_AppliedToRootElement(string invalidClassName) {
+        //Act
+        var cut = RenderComponent<RyaButton>(parameters => {
+            parameters.Add(p => p.CssClass, invalidClassName);
+        });
+        
+        //Assert
+        Assert.IsTrue(GetButtonElement(cut).ClassList.Contains(invalidClassName));
+    }
+
+    [TestCase("")]
+    [TestCase(null)]
+    public void CssClass_EmptyClasses_DoesNotThrowExceptions(string emptyCssClass) {
+        //Act & Assert
+        Assert.DoesNotThrow(() => {
+            RenderComponent<RyaButton>(parameters => {
+                parameters.Add(p => p.CssClass, emptyCssClass);
+            });
+        });
+    }
+
+    [TestCase("my-custom-css")]
+    [TestCase("s")]
+    [TestCase("very-loooooooooooooooooooooooooooooooong-custom-css-class-name")]
+    [TestCase("spoiled-класс")]
+    public void IconCssClass_AppliedToSpanIconElement(string customCssClass) {
+        //Arrange
+        string spanIconSelector = ".rya-btn-icon";
+
+        //Act
+        var cut = RenderComponent<RyaButton>(parameters => {
+            parameters.Add(p => p.IconCssClass, customCssClass);
+        });
+        var spanIconElement = cut.Find(spanIconSelector);
+
+        //Assert
+        Assert.IsNotNull(spanIconElement);
+        Assert.IsTrue(spanIconElement.ClassList.Contains(customCssClass));
+    }
+
+    [TestCase("")]
+    [TestCase(null)]
+    public void IconCssClass_EmptyClasses_DoesNotThrowExceptions(string emptyCssClass) {
+        //Act & Assert
+        Assert.DoesNotThrow(() => {
+            RenderComponent<RyaButton>(parameters => {
+                parameters.Add(p => p.IconCssClass, emptyCssClass);
+            });
+        });
+    }
+
+    [Test]
+    public void ChildContent_NonEmptyContent_IconDoesNotRender() {
+        //Arrange
+        string spanIconSelector = ".rya-btn-icon";
+
+        //Act
+        var cut = RenderComponent<RyaButton>(parameters => {
+            parameters.Add(p => p.ChildContent, @<span>Custom Content</span>);
+        });
+        var spanIconElements = cut.FindAll(spanIconSelector);
+
+        //Assert
+        Assert.IsEmpty(spanIconElements);
+    }
+
+    [Test]
+    public void ChildContent_NonEmptyContent_ContentRenderedInsideButton() {
+        //Arrange
+        int expectedButtonChildCount = 1;
+        RenderFragment customContent = @<span>Custom Content</span>;
+
+        //Act
+        var cut = RenderComponent<RyaButton>(parameters => {
+            parameters.Add(p => p.ChildContent, customContent);
+        });
+        var buttonElement = GetButtonElement(cut);
+        var buttonContent = buttonElement.FirstChild;
+
+        //Assert
+        Assert.IsNotNull(buttonElement);
+        Assert.IsNotNull(buttonContent);
+        Assert.AreEqual(buttonElement.Children.Length, expectedButtonChildCount);
+        buttonContent!.MarkupMatches(customContent);
+    }
+
+    [Test]
+    public void Enabled_SetToFalse_DisabledAttributeAppliedToRootElement() {
+        //Act
+        var cut = RenderComponent<RyaButton>(parameters => {
+            parameters.Add(p => p.Enabled, false);
+        });
+        
+        //Assert
+        Assert.IsTrue(GetButtonElement(cut).HasAttribute("disabled"));
+    }
+
+    [Test]
+    public void Enabled_SetToFalse_DisabledCssClassAppliedToRootElement() {
+        //Arrange
+        string buttonDisabledCssClass = "rya-btn-disabled";
+
+        //Act
+        var cut = RenderComponent<RyaButton>(parameters => {
+            parameters.Add(p => p.Enabled, false);
+        });
+        
+        //Assert
+        Assert.IsTrue(GetButtonElement(cut).ClassList.Contains(buttonDisabledCssClass));
+    }
+
+    [Test]
+    public void Enabled_SetToFalse_ClickDoesNotInvokeHandler() {
+        //Arrange
+        bool raised = false;
+        var cut = RenderComponent<RyaButton>(parameters => {
+            parameters.Add(p => p.Enabled, false);
+            parameters.Add(p => p.Click, (e) => raised = true);
+        });
+
+        //Act
+        GetButtonElement(cut).Click();
+
+        //Assert
+        Assert.IsFalse(raised);
+    }
+}
