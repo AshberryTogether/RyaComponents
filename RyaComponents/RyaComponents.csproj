@@ -27,6 +27,12 @@
     <SupportedPlatform Include="browser" />
   </ItemGroup>
 
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>RyaComponents.Tests</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.5" />
   </ItemGroup>
